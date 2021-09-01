@@ -731,24 +731,124 @@ function misha_loadmore_ajax_handler() {
 add_action('wp_ajax_loadmore', 'misha_loadmore_ajax_handler'); // wp_ajax_{action}
 add_action('wp_ajax_nopriv_loadmore', 'misha_loadmore_ajax_handler'); // wp_ajax_nopriv_{action}
 
-/*** Custom Loop ***/
-// function demo_loop() {
-//     $args = array(
-//         'cat' => '2',
-//         'posts_per_page' => 1,
-//     );
+function custom_post_type() {
 
-//     $demo_posts = new WP_Query($args);
+    ///// Events
+    $labels = array(
+        'name' => _x('books', 'Post Type General Name', 'hoax-backend'),
+        'singular_name' => _x('Book', 'Post Type Singular Name', 'hoax-backend'),
+        'menu_name' => __('books', 'hoax-backend'),
+        'parent_item_colon' => __('Parent event', 'hoax-backend'),
+        'all_items' => __('All books', 'hoax-backend'),
+        'view_item' => __('View Book', 'hoax-backend'),
+        'add_new_item' => __('New Book', 'hoax-backend'),
+        'add_new' => __('Add new', 'hoax-backend'),
+        'edit_item' => __('Edit Book', 'hoax-backend'),
+        'update_item' => __('Edit', 'hoax-backend'),
+        'search_items' => __('Search', 'hoax-backend'),
+        'not_found' => __('Not found', 'hoax-backend'),
+        'not_found_in_trash' => __('Not found in trash', 'hoax-backend'),
+    );
+    $args = array(
+        'label' => __('books', 'hoax-backend'),
+        'description' => __('Books', 'hoax-backend'),
+        'labels' => $labels,
+        'menu_icon' => 'dashicons-admin-media',
+        // Features this CPT supports in Post Editor
+        //'supports'            => array( 'title', 'editor', 'excerpt', 'author', 'thumbnail', 'comments', 'revisions', 'custom-fields', ),
+        'supports' => array('title', 'thumbnail', 'page-attributes'),
+        // You can associate this CPT with a taxonomy or custom taxonomy.
+        //'taxonomies'          => array( 'research-categories', 'post_tag' ),
+        /* A hierarchical CPT is like Pages and can have
+         * Parent and child items. A non-hierarchical CPT
+         * is like Posts.
+         */
+        'hierarchical' => false,
+        'public' => true,
+        'show_ui' => true,
+        'show_in_menu' => true,
+        'show_in_nav_menus' => true,
+        'show_in_admin_bar' => true,
+        'menu_position' => 6,
+        'can_export' => true,
+        'has_archive' => false,
+        'exclude_from_search' => false,
+        'publicly_queryable' => true,
+        'capability_type' => 'page',
+    );
 
-//     if ($demo_posts->have_posts()) {
-//         while ($demo_posts->have_posts()) {
-//             $demo_posts->the_post();
+    register_post_type('books', $args);}
 
-//             get_template_part('template-parts/post/content', get_post_format());
-//         }
+add_action('init', 'custom_post_type', 0);
 
-//     }
+/**
+ * ACF Load More Repeater
+ */
 
-// }
+// add action for logged in users
+add_action('wp_ajax_load_more', 'repeater_load_more');
+// add action for non logged in users
+add_action('wp_ajax_nopriv_load_more', 'repeater_load_more');
 
-// add_shortcode('demo_custom_loop', 'demo_loop');
+function repeater_load_more() {
+    // validate the nonce
+    // if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'my_repeater_field_nonce')) {
+    //     exit;
+    // }
+    // make sure we have the other values
+    if (!isset($_POST['post_id']) || !isset($_POST['offset'])) {
+        return;
+    }
+    $show = 1; // how many more to show
+    $start = $_POST['offset'];
+    $end = $start + $show;
+    $post_id = $_POST['post_id'];
+    // use an object buffer to capture the html output
+    // alternately you could create a varaible like $html
+    // and add the content to this string, but I find
+    // object buffers make the code easier to work with
+    ob_start();
+    if (have_rows('books', $post_id)) {
+        $total = count(get_field('books', $post_id));
+        $count = 0;
+        while (have_rows('books', $post_id)) {
+            the_row();
+            // Load sub field value.
+            $cover_image = get_sub_field('cover_image');
+            $author = get_sub_field('author');
+            $title = get_sub_field('title');
+            if ($count < $start) {
+                // we have not gotten to where
+                // we need to start showing
+                // increment count and continue
+                $count++;
+                continue;
+            }
+            ?>
+<div class="card">
+  <?php echo wp_get_attachment_image($cover_image, '', '', array('class' => 'img-cover')); ?>
+  <div>
+    Title : <?php echo $title ?>
+  </div>
+  <div>
+    Author : <?php echo $author ?>
+  </div>
+</div>
+<?php
+$count++;
+            if ($count == $end) {
+                // we have shown the number, break out of loop
+                break;
+            }
+        } // end while have rows
+    } // end if have rows
+    $content = ob_get_clean();
+    // check to see if we have shown the last item
+    $more = false;
+    if ($total > $count) {
+        $more = true;
+    }
+    // output our 3 values as a json encoded array
+    echo json_encode(array('content' => $content, 'more' => $more, 'offset' => $end));
+    exit;
+} // end function repeater_load_more

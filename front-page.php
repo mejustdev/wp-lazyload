@@ -12,48 +12,94 @@
  * @version 1.0
  */
 
-get_header(); ?>
+get_header();?>
 
 <div id="primary" class="content-area">
-	<main id="main" class="site-main" role="main">
+  <main id="main" class="site-main" role="main">
+    <div id="books-gallery">
+      <h1>ACF Repeater Field Infinite Scrooling</h1>
+      <div class="row">
+        <?php
+if (have_rows('books')):
+    // Total repeater fields
+    $total = count(get_field('books'));
+    // These are for displaying how many items we want to show in the first render
+    // In this example 3
+    $count = 0;
+    $number = 2;
 
-		<?php
-		// Show the selected front page content.
-		if ( have_posts() ) :
-			while ( have_posts() ) :
-				the_post();
-				get_template_part( 'template-parts/page/content', 'front-page' );
-			endwhile;
-		else :
-			get_template_part( 'template-parts/post/content', 'none' );
-		endif;
-		?>
+    while (have_rows('books')): the_row();
 
-		<?php
-		// Get each of our panels and show the post data.
-		if ( 0 !== twentyseventeen_panel_count() || is_customize_preview() ) : // If we have pages to show.
+        $cover_image = get_sub_field('cover_image');
+        $author = get_sub_field('author');
+        $title = get_sub_field('title');?>
 
-			/**
-			 * Filters the number of front page sections in Twenty Seventeen.
-			 *
-			 * @since Twenty Seventeen 1.0
-			 *
-			 * @param int $num_sections Number of front page sections.
-			 */
-			$num_sections = apply_filters( 'twentyseventeen_front_page_sections', 4 );
-			global $twentyseventeencounter;
+        <div class="card">
+          <?php echo wp_get_attachment_image($cover_image, '', '', array('class' => 'img-cover')); ?>
+          <div>
+            Title : <?php echo $title ?>
+          </div>
+          <div>
+            Author : <?php echo $author ?>
+          </div>
+        </div>
 
-			// Create a setting and control for each of the sections available in the theme.
-			for ( $i = 1; $i < ( 1 + $num_sections ); $i++ ) {
-				$twentyseventeencounter = $i;
-				twentyseventeen_front_page_section( null, $i );
-			}
+        <?php
+        // End loop.
+        if ($count == $number) {
+            // check the number of repeater fields that we want to show in the first render
+            break;
+        }?>
 
-	endif; // The if ( 0 !== twentyseventeen_panel_count() ) ends here.
-		?>
+        <?php $count++;endwhile;
 
-	</main><!-- #main -->
-</div><!-- #primary -->
+else:
+    // Do something...
+endif;?>
+      </div>
+
+      <a id="gallery-load-more" href="javascript: repeater_load_more();" <?php if ($count > $number) {?>
+        style="display: none;" <?php }?>>
+        <h2 id="title-bg"><span>Load more</span></h2>
+      </a>
+    </div>
+  </main>
+</div>
+
+<script type="text/javascript">
+var my_repeater_field_post_id = <?php echo $post->ID; ?>;
+var my_repeater_field_offset = <?php echo $number + 1; ?>;
+// var my_repeater_field_nonce = '<?php echo wp_create_nonce('my_repeater_field_nonce'); ?>';
+var my_repeater_ajax_url = '<?php echo admin_url('admin-ajax.php'); ?>';
+var my_repeater_more = true;
+
+function repeater_load_more() {
+
+  jQuery.post(
+    my_repeater_ajax_url, {
+      'action': 'load_more',
+      'post_id': my_repeater_field_post_id,
+      'offset': my_repeater_field_offset,
+      // 'nonce': my_repeater_field_nonce
+    },
+    function(json) {
+      // add content to container
+      // this ID must match the containter
+      // you want to append content to
+      jQuery('#books-gallery .row').append(json['content']);
+
+      // update offset
+      my_repeater_field_offset = json['offset'];
+      // see if there is more, if not then hide the more link
+      if (!json['more']) {
+        // this ID must match the id of the show more link
+        jQuery('#gallery-load-more').css('display', 'none');
+      }
+    },
+    'json'
+  );
+}
+</script>
 
 <?php
 get_footer();
