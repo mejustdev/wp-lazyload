@@ -3,7 +3,7 @@
 
 <br/>
 
-### Files -- [Credit](https://rudrastyh.com/wordpress/load-more-posts-ajax.html#comments)
+### Files -- [Credit](https://rudrastyh.com/wordpress/load-more-posts-ajax.html)
 
  - myloadmore.js
  - index.php
