@@ -55,11 +55,11 @@ if (have_posts()):
     //         'before_page_number' => '<span class="meta-nav screen-reader-text">' . __('Page', 'twentyseventeen') . ' </span>',
     //     )
     // );
-    global $wp_query; // you can remove this line if everything works for you
-    if ($wp_query->max_num_pages > 1):
-        echo '<article class="misha_loadmore">More posts</article>'; // you can use <a> as well
+    // global $wp_query; // you can remove this line if everything works for you
+    // if ($wp_query->max_num_pages > 1):
+    //     echo '<article class="misha_loadmore">More posts</article>'; // you can use <a> as well
 
-    endif;
+    // endif;
 // don't display the button if there are not enough posts
 
 else:
