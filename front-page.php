@@ -27,7 +27,7 @@ if (have_rows('books')):
     // In this example 3
     $count = 0;
     $number = 2;
-
+    // Loop through rows.
     while (have_rows('books')): the_row();
 
         $cover_image = get_sub_field('cover_image');
@@ -77,14 +77,15 @@ function repeater_load_more() {
 
   jQuery.post(
     my_repeater_ajax_url, {
-      'action': 'load_more',
+      // action names must be unique in entire website
+      'action': 'load_more_repeater',
       'post_id': my_repeater_field_post_id,
       'offset': my_repeater_field_offset,
       // 'nonce': my_repeater_field_nonce
     },
     function(json) {
       // add content to container
-      // this ID must match the containter
+      // this ID must match the container
       // you want to append content to
       jQuery('#books-gallery .row').append(json['content']);
 
