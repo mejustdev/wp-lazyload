@@ -119,7 +119,7 @@ if (  $wp_query->max_num_pages > 1 )
 ?>
 ```
 
-## With/without button infinite scrolling 
+## With button infinite scrolling 
 #### (ACF Repeater field with custom post type -- books)
 
 
@@ -131,3 +131,18 @@ if (  $wp_query->max_num_pages > 1 )
  - functions.php 
     - repeater_load_more()
     - CPT--books
+
+<br/>
+<br/>
+
+#### (ACF Flexible Content -- movies)
+
+
+<br/>
+
+### Files 
+
+ - content-page.php
+ - functions.php 
+    - flexible_content_load_more()
+  
