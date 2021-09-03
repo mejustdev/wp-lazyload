@@ -786,9 +786,9 @@ add_action('init', 'custom_post_type', 0);
  */
 
 // add action for logged in users
-add_action('wp_ajax_load_more', 'repeater_load_more');
+add_action('wp_ajax_load_more_repeater', 'repeater_load_more');
 // add action for non logged in users
-add_action('wp_ajax_nopriv_load_more', 'repeater_load_more');
+add_action('wp_ajax_nopriv_load_more_repeater', 'repeater_load_more');
 
 function repeater_load_more() {
     // validate the nonce
@@ -851,4 +851,122 @@ $count++;
     // output our 3 values as a json encoded array
     echo json_encode(array('content' => $content, 'more' => $more, 'offset' => $end));
     exit;
-} // end function repeater_load_more
+} // end function flexible_content_load_more
+
+/**
+ * ACF Load More flexible_content
+ */
+
+// add action for logged in users
+add_action('wp_ajax_load_more_flex', 'flexible_content_load_more');
+// add action for non logged in users
+add_action('wp_ajax_nopriv_load_more_flex', 'flexible_content_load_more');
+
+function flexible_content_load_more() {
+    // validate the nonce
+    // if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'my_repeater_field_nonce')) {
+    //     exit;
+    // }
+    // make sure we have the other values
+    if (!isset($_POST['post_id']) || !isset($_POST['offset'])) {
+        return;
+    }
+    $show = 1; // how many more to show
+    $start = $_POST['offset'];
+    $end = $start + $show;
+    $post_id = $_POST['post_id'];
+    // use an object buffer to capture the html output
+    // alternately you could create a varaible like $html
+    // and add the content to this string, but I find
+    // object buffers make the code easier to work with
+    ob_start();
+    if (have_rows('movies', $post_id)) {
+        $total = count(get_field('movies', $post_id));
+        $count = 0;
+        while (have_rows('movies', $post_id)) {
+            the_row();
+            if ($count < $start) {
+                // we have not gotten to where
+                // we need to start showing
+                // increment count and continue
+                $count++;
+                continue;
+            }
+            // Case: information layout.
+            if (get_row_layout() == 'information'):
+                $image = get_sub_field('image');
+                $artist = get_sub_field('artist');
+                $description = get_sub_field('description');
+                ?>
+<div class="card">
+  <?php echo wp_get_attachment_image($image, '', '', array('class' => 'img-cover')); ?>
+  <div>
+    Artist : <?php echo $artist ?>
+  </div>
+  <div>
+    Description : <?php echo $description ?>
+  </div>
+</div>
+<?php
+    $count++;
+                if ($count == $end) {
+                    // we have shown the number, break out of loop
+                    break;
+                }
+                ?>
+<?php
+    // Case: extra layout.
+            elseif (get_row_layout() == 'extra'):
+                $info = get_sub_field('info');?>
+<div class="card">
+  <h1>Info <?php echo $info ?></h1>
+</div>
+<?php
+    $count++;
+                if ($count == $end) {
+                    // we have shown the number, break out of loop
+                    break;
+                }
+                ?>
+<?php
+    // Case: section layout.
+            elseif (get_row_layout() == 'section'):
+                // $detail_columns = get_sub_field('detail_columns');
+                $rows = get_sub_field('detail_columns');
+                if ($rows) {
+
+                    foreach ($rows as $row) {
+                        $name = $row['name'];
+                        $position = $row['position'];?>
+<div class="card">
+  <div>
+    Name : <?php echo $name ?>
+  </div>
+  <div>
+    Position : <?php echo $position ?>
+  </div>
+</div>
+
+<?php }
+
+                }
+
+                $count++;
+                if ($count == $end) {
+                    // we have shown the number, break out of loop
+                    break;
+                }
+
+            endif;
+        } // end while have rows
+    } // end if have rows
+    $content = ob_get_clean();
+    // check to see if we have shown the last item
+    $more = false;
+    if ($total > $count) {
+        $more = true;
+    }
+    // output our 3 values as a json encoded array
+    echo json_encode(array('content' => $content, 'more' => $more, 'offset' => $end));
+    exit;
+} // end flexible_content_load_more

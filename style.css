@@ -4442,6 +4442,11 @@ p > object:only-child {
   width: 10rem;
   margin: 0 auto;
 }
+#movies-load-more {
+  display: block;
+  width: 10rem;
+  margin: 0 auto;
+}
 
 #title-bg {
   text-align: center;
